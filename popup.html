@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Internet Usage Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      width: 340px;
+      background: #d6d6d6;
+      color: #1a1a1a;
+      padding: 10px;
+    }
+
+    .card {
+      background: rgba(235,235,235,0.92);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.6) inset, 0 4px 24px rgba(0,0,0,0.18);
+    }
+
+    /* ── Header ── */
+    .header { padding: 16px 18px 10px; }
+    .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .app-title { font-size: 11px; font-weight: 700; color: #444; letter-spacing: 1.8px; text-transform: uppercase; }
+    .header-right { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #777; }
+    .dots { font-size: 14px; letter-spacing: 1px; color: #999; }
+
+    /* ── Total ── */
+    .total-section { padding: 0 18px 14px; }
+    .total-time { font-family: 'Share Tech Mono', monospace; font-size: 44px; color: #1a1a1a; line-height: 1; letter-spacing: -1px; }
+    .total-meta { display: flex; justify-content: flex-end; margin-top: -10px; }
+    .site-count { font-size: 11px; color: #888; font-weight: 500; }
+
+    /* ── Tabs ── */
+    .tab-bar { display: flex; gap: 6px; padding: 0 18px 14px; }
+    .tab-btn {
+      padding: 6px 14px; font-size: 11px; font-weight: 600;
+      border-radius: 999px; border: 1.5px solid #bbb; background: #c8c8c8;
+      color: #555; cursor: pointer; transition: all 0.15s; font-family: 'Inter', sans-serif;
+    }
+    .tab-btn.active { background: #f5f5f5; border-color: #ddd; color: #111; box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+    .tab-btn:not(.active):hover { background: #bbb; color: #333; }
+
+    .divider { height: 1px; background: rgba(0,0,0,0.08); margin: 0 18px; }
+
+    /* ── Content ── */
+    #content { padding: 6px 10px 8px; min-height: 100px; max-height: 300px; overflow-y: auto; }
+    #content::-webkit-scrollbar { width: 3px; }
+    #content::-webkit-scrollbar-thumb { background: #bbb; border-radius: 999px; }
+
+    .empty, .loading { text-align: center; padding: 28px 16px; color: #aaa; font-size: 12px; line-height: 1.8; }
+    .empty strong { display: block; font-size: 13px; color: #888; margin-bottom: 4px; }
+
+    /* ── Site Card ── */
+    .site-card {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 8px 8px; border-radius: 12px;
+      transition: background 0.12s; cursor: default; position: relative;
+    }
+    .site-card:hover { background: rgba(0,0,0,0.04); }
+
+    .favicon-wrap {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: rgba(0,0,0,0.07); display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0; overflow: hidden;
+      border: 1.5px solid rgba(0,0,0,0.08);
+    }
+    .site-favicon { width: 16px; height: 16px; object-fit: contain; }
+
+    .site-info { flex: 1; min-width: 0; }
+    .site-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 6px; }
+    .site-name { font-size: 12px; font-weight: 500; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .site-right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+    .site-time { font-size: 12px; font-weight: 600; color: #333; }
+
+    /* Compare tags */
+    .cmp { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 999px; }
+    .cmp-new  { background: #e8e8e8; color: #888; }
+    .cmp-more { background: #fde8e8; color: #cc4444; }
+    .cmp-less { background: #e8f5e8; color: #339933; }
+
+    /* Dashed bars */
+    .site-bar-wrap { width: 100%; height: 2px; position: relative; }
+    .site-bar-track {
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background-image: repeating-linear-gradient(90deg, #ccc 0px, #ccc 4px, transparent 4px, transparent 8px);
+    }
+    .site-bar-fill {
+      position: absolute; top: 0; left: 0; height: 2px;
+      background-image: repeating-linear-gradient(90deg, #555 0px, #555 4px, transparent 4px, transparent 8px);
+      transition: width 0.4s ease;
+    }
+
+    /* Block button */
+    .block-btn {
+      width: 24px; height: 24px; border-radius: 50%;
+      border: none; background: transparent; font-size: 13px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.15s, background 0.15s;
+      flex-shrink: 0; padding: 0;
+    }
+    .site-card:hover .block-btn { opacity: 1; }
+    .block-btn:hover { background: rgba(0,0,0,0.08); }
+    .block-btn.is-blocked { opacity: 1; }
+
+    /* ── Category Cards ── */
+    .cat-card { padding: 9px 8px 8px; border-radius: 12px; transition: background 0.12s; margin-bottom: 2px; }
+    .cat-card:hover { background: rgba(0,0,0,0.04); }
+    .cat-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .cat-name { font-size: 12px; font-weight: 500; color: #1a1a1a; }
+    .cat-right { display: flex; align-items: center; gap: 8px; }
+    .cat-sites { font-size: 10px; color: #aaa; }
+    .cat-time  { font-size: 12px; font-weight: 600; color: #333; }
+    .cat-bar-wrap { width: 100%; height: 2px; position: relative; }
+    .cat-bar-track {
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background-image: repeating-linear-gradient(90deg, #ccc 0px, #ccc 4px, transparent 4px, transparent 8px);
+    }
+    .cat-bar-fill {
+      position: absolute; top: 0; left: 0; height: 2px;
+      transition: width 0.4s ease;
+    }
+
+    /* ── Footer ── */
+    .footer { display: flex; gap: 8px; padding: 10px 18px 16px; border-top: 1px solid rgba(0,0,0,0.07); margin-top: 4px; }
+    .footer-btn {
+      flex: 1; padding: 9px 0; font-size: 11px; font-weight: 600;
+      border-radius: 999px; border: 1.5px solid #bbb; background: transparent;
+      color: #555; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s;
+    }
+    .footer-btn:hover { background: rgba(0,0,0,0.06); color: #111; border-color: #999; }
+    .btn-export:hover { color: #2d7a2d; border-color: #2d7a2d; }
+    .btn-clear:hover  { color: #cc3333; border-color: #cc3333; }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <div class="header">
+    <div class="header-row">
+      <span class="app-title">Usage</span>
+      <div class="header-right">
+        <span id="dateBadge">Today</span>
+        <button class="dots" id="dashBtn" title="Open Dashboard" style="font-size:11px;border:none;background:none;cursor:pointer;color:#999;font-weight:600;letter-spacing:0">↗</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="total-section">
+    <div class="total-time" id="totalTime">--</div>
+    <div class="total-meta">
+      <span class="site-count"><strong id="siteCount">--</strong> sites</span>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-today">Today</button>
+    <button class="tab-btn" id="tab-alltime">All Time</button>
+    <button class="tab-btn" id="tab-categories">Categories</button>
+  </div>
+
+  <div class="divider"></div>
+  <div id="content"><div class="loading">Loading...</div></div>
+
+  <div class="footer">
+    <button class="footer-btn btn-clear"  id="clearBtn">Clear Today</button>
+    <button class="footer-btn btn-export" id="exportBtn">Export CSV</button>
+  </div>
+
+</div>
+<script src="popup.js"></script>
+</body>
+</html>

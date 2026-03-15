@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Internet Usage Analyzer",
+  "version": "2.0",
+  "description": "Tracks website usage with daily history, idle detection, notifications and site blocking",
+  "permissions": [
+    "tabs",
+    "storage",
+    "windows",
+    "idle",
+    "alarms",
+    "notifications"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Internet Usage Analyzer"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["blocked.html", "dashboard/index.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
